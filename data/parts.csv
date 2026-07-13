@@ -1,0 +1,25 @@
+part_id,part_name,category,unit_cost,unit_price,supplier,lead_time_days,demand_trend,holding_cost_per_unit_week,stockout_cost_per_unit
+P001,Battery Module A,Battery System,820,1150,VoltCore GmbH,21,Increasing,4.92,847.5
+P002,Battery Cooling Plate,Battery System,145,240,ThermoEV Supply,14,Increasing,0.87,203.0
+P003,Battery Management Sensor,Battery System,95,165,SensorTech EU,14,Stable,0.57,144.25
+P004,Charging Port Assembly,Charging System,210,340,ChargeLink AG,21,Increasing,1.26,249.0
+P005,AC Charging Cable,Cables and Connectors,75,135,CableWorks,7,Stable,0.45,93.75
+P006,DC Fast-Charge Connector,Charging System,180,310,ChargeLink AG,14,Increasing,1.08,238.5
+P007,Brake Wear Sensor,Brake System,28,58,SafeStop Parts,7,Stable,0.17,51.75
+P008,Regenerative Brake Control Unit,Brake System,260,410,SafeStop Parts,21,Decreasing,1.56,303.75
+P009,Coolant Pump,Thermal Management,120,215,ThermoEV Supply,14,Increasing,0.72,159.5
+P010,Heat Exchanger,Thermal Management,190,320,ThermoEV Supply,21,Seasonal,1.14,226.0
+P011,Cabin PTC Heater,Thermal Management,155,260,ThermoEV Supply,14,Seasonal,0.93,183.0
+P012,Inverter Module,Power Electronics,640,920,E-Motion Electronics,28,Decreasing,3.84,671.0
+P013,Power Converter,Power Electronics,380,610,E-Motion Electronics,21,Stable,2.28,489.25
+P014,Onboard Charger Unit,Power Electronics,460,720,ChargeLink AG,28,Increasing,2.76,566.0
+P015,Electric Motor Bearing Kit,Electric Motor,85,150,RotorParts GmbH,14,Stable,0.51,113.75
+P016,Motor Rotor Position Sensor,Sensors,65,120,SensorTech EU,14,Increasing,0.39,88.0
+P017,Wheel Speed Sensor,Sensors,32,65,SensorTech EU,7,Stable,0.19,50.88
+P018,High-Voltage Cable Harness,Cables and Connectors,240,390,CableWorks,21,Increasing,1.44,247.5
+P019,Low-Voltage Connector Set,Cables and Connectors,18,42,CableWorks,7,Stable,0.11,34.5
+P020,Vehicle Control Unit,Control Units,510,790,E-Motion Electronics,28,Decreasing,3.06,635.5
+P021,Thermal Expansion Valve,Thermal Management,60,105,ThermoEV Supply,7,Seasonal,0.36,76.5
+P022,Battery Seal Kit,Battery System,38,75,VoltCore GmbH,7,Increasing,0.23,70.75
+P023,Charge Door Actuator,Charging System,52,95,ChargeLink AG,7,Decreasing,0.31,76.25
+P024,Auxiliary Cooling Fan,Thermal Management,70,130,ThermoEV Supply,14,Stable,0.42,99.0
