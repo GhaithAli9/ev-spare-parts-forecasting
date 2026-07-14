@@ -62,13 +62,16 @@ fulfilled). All three were validated to contain no missing values, no duplicate 
 gaps, and no negative values before any further analysis.
 
 After merging demand and inventory on \texttt{(week\_start, part\_id)}, five variables were
-derived exactly as specified: \texttt{available\_inventory = stock\_on\_hand +
-replenishment}; \texttt{units\_fulfilled = min(available\_inventory, units\_demanded)};
-\texttt{unmet\_demand = max(units\_demanded - available\_inventory, 0)};
-\texttt{ending\_stock = max(available\_inventory - units\_demanded, 0)}; and
-\texttt{stockout = 1} if \texttt{unmet\_demand > 0}. Reconciliation
-(demand = fulfilled + unmet) and the week-to-week stock-chaining property were both verified
-across the full dataset.
+derived exactly as specified:
+\begin{itemize}[nosep]
+  \item \texttt{available\_inventory = stock\_on\_hand + replenishment}
+  \item \texttt{units\_fulfilled = min(available\_inventory, units\_demanded)}
+  \item \texttt{unmet\_demand = max(units\_demanded - available\_inventory, 0)}
+  \item \texttt{ending\_stock = max(available\_inventory - units\_demanded, 0)}
+  \item \texttt{stockout = 1} if \texttt{unmet\_demand > 0}, else \texttt{0}
+\end{itemize}
+Reconciliation (demand = fulfilled + unmet) and the week-to-week stock-chaining property were
+both verified across the full dataset.
 
 \textbf{Key assumptions, stated explicitly:}
 \begin{itemize}[nosep]
@@ -98,7 +101,7 @@ remaining phases (data audit, merge, EDA, cost aggregation) are straightforward
 groupby/aggregate operations over the merged weekly table.
 
 \begin{quote}
-\ttfamily\noindent
+\small\ttfamily\noindent
 \textbf{Algorithm 1: Walk-forward forecast evaluation}\\[0.3em]
 methods = \{naive, moving\_average, exp\_smoothing, holt\}\\
 \textbf{for} each part $p$ in 24 parts:\\
@@ -113,7 +116,7 @@ methods = \{naive, moving\_average, exp\_smoothing, holt\}\\
 \end{quote}
 
 \begin{quote}
-\ttfamily\noindent
+\footnotesize\ttfamily\noindent
 \textbf{Algorithm 2: Reorder classification} (checked in order; first match wins)\\[0.3em]
 \textbf{function} classify(part):\\
 \hspace*{1.5em}\textbf{if} current\_stock $<$ reorder\_point:\\
@@ -152,13 +155,16 @@ the most accurate (MAE 3.17, MAPE 33.7\%) and the cheapest (average total cost \
 ahead of exponential smoothing, moving average, and naive (worst on every metric).
 
 \textbf{The disagreement -- the central result:} at the level of individual parts, this
-agreement breaks down. On 12 of 24 parts, the most statistically accurate method was
-\emph{not} the cheapest one -- choosing accuracy over cost on those parts costs \textbf{33.5\%
+agreement breaks down. On 11 of 24 parts, the most statistically accurate method was
+\emph{not} the cheapest one -- choosing accuracy over cost on those parts costs \textbf{35.8\%
 more on average}, peaking at \textbf{152.9\% more} on part P023 (Figure~\ref{fig:disagreement}).
+A robustness check using RMSE instead of MAE to define "most accurate" gives 9 of 24 parts
+disagreeing (7 in common with the MAE-based set) -- a similarly-sized effect, not an artifact
+of one specific metric.
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.85\textwidth]{disagreement.png}
+  \includegraphics[width=0.85\textwidth]{figures/disagreement.png}
   \caption{Total cost by method for the parts with the largest accuracy/cost disagreement.
   Holt (green) is the cheapest bar for five of six parts shown, but the most expensive for
   P004 -- the same method flips from best to worst choice depending on the part's cost
@@ -168,18 +174,30 @@ more on average}, peaking at \textbf{152.9\% more} on part P023 (Figure~\ref{fig
 
 \textbf{Mechanism:} the driver is bias direction combined with cost asymmetry, not raw error
 magnitude. Parts P004 and P008 sit in the expensive/high-demand segment
-(Figure~\ref{fig:segmentation}), where stockout cost dominates holding cost by roughly 10x.
-On these parts, Holt's slightly stronger under-forecasting bias is punished disproportionately
-by the high per-unit stockout cost, even though its average error (MAE) was smaller than the
-alternative method's.
+(Figure~\ref{fig:segmentation}), where stockout cost dominates holding cost by roughly 10x --
+visible for most parts in Figure~\ref{fig:asymmetry} -- and this asymmetry is the engine of the
+entire finding: without it, which direction a method's errors lean would not matter for cost
+at all. On the high-stockout-cost parts, Holt's slightly stronger under-forecasting bias is
+punished disproportionately by the high per-unit stockout cost, even though its average error
+(MAE) was smaller than the alternative method's.
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.7\textwidth]{segmentation.png}
-  \caption{Parts segmented by demand volume and unit cost (median split), colored by
-  historical stockout cost. The expensive/high-demand quadrant (P002, P004, P008, P011, P018)
-  carries the largest stockout-cost exposure.}
-  \label{fig:segmentation}
+  \begin{minipage}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/asymmetry.png}
+    \caption{Historical holding cost (blue) vs.\ stockout cost (red) per part. Stockout cost
+    dominates for most parts -- the reason bias direction, not error magnitude, drives cost.}
+    \label{fig:asymmetry}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/segmentation.png}
+    \caption{Parts segmented by demand volume and unit cost (median split), colored by
+    historical stockout cost. The expensive/high-demand quadrant carries the largest exposure.}
+    \label{fig:segmentation}
+  \end{minipage}
 \end{figure}
 
 \textbf{Business recommendations:}
@@ -194,8 +212,9 @@ alternative method's.
   their risk is cash tied up in slow-moving inventory, not stockouts.
   \item \textbf{Limitations:} Holt's method occasionally failed to fully converge on short
   series (58--77 points); the 95\% service level is a fixed assumption, not individually
-  optimized per part; and the reorder policy has not yet been tested against future
-  (out-of-sample) data.
+  optimized per part; recommended order quantity restores stock only to the reorder point
+  rather than a higher order-up-to target, so a part can re-trigger a reorder soon after; and
+  the reorder policy has not yet been tested against future (out-of-sample) data.
 \end{enumerate}
 
 % ============================================================
@@ -206,9 +225,9 @@ alternative method's.
 \toprule
 \textbf{Member} & \textbf{Primary responsibilities} \\
 \midrule
-[Name 1] & [e.g., data audit, merge, derived variables; problem formulation] \\
-[Name 2] & [e.g., EDA, demand classification, segmentation, visualization] \\
-[Name 3] & [e.g., forecasting methods, walk-forward engine, dual evaluation] \\
+\textit{Name 1} & \textit{e.g., data audit, merge, derived variables; problem formulation} \\
+\textit{Name 2} & \textit{e.g., EDA, demand classification, segmentation, visualization} \\
+\textit{Name 3} & \textit{e.g., forecasting methods, walk-forward engine, dual evaluation} \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -254,12 +273,16 @@ P008 & holt            & moving\_average& 8{,}849.3  & 7{,}653.0 & 15.6  \\
 P021 & moving\_average & holt           & 3{,}379.7  & 2{,}999.7 & 12.7  \\
 P007 & holt            & exp\_smoothing & 1{,}556.2  & 1{,}401.7 & 11.0  \\
 P010 & moving\_average & exp\_smoothing & 5{,}009.6  & 4{,}561.0 & 9.8   \\
-P022 & exp\_smoothing  & moving\_average& 2{,}552.1  & 2{,}340.5 & 9.0   \\
 P005 & holt            & exp\_smoothing & 5{,}555.6  & 5{,}281.0 & 5.2   \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\noindent Average premium across all 12 disagreeing parts: \textbf{33.5\%}.
+\textit{Note: P022 is correctly excluded here. An earlier tie-breaking rule (resolving a
+2-way accuracy tie by row order rather than by checking whether any tied method was also
+cheapest) had misclassified it as disagreeing; the corrected, order-independent rule shows
+its tied accurate methods include the cheapest one, i.e.\ it actually agrees.}
+
+\noindent Average premium across all 11 disagreeing parts: \textbf{35.8\%}.
 
 \end{document}
